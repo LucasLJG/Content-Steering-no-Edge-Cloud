@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <link rel="shortcut icon" href="data:,">
+    <meta charset="UTF-8">
+    <title>Content Steering Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dashjs/4.7.4/dash.all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2, h3 {
+            color: #0056b3;
+        }
+        .controls, #steeringInfo, #serverControls, #comparisonResults {
+            margin-bottom: 20px;
+            padding: 20px;
+            background: #e9ecef;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        .network-presets {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .network-presets button {
+            flex: 1;
+            padding: 10px;
+            background-color: #007bff;
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.3s;
+        }
+        .network-presets button.selected {
+            background-color: #dc3545;
+            color: #fff;
+        }
+        .network-presets button:hover {
+            transform: scale(1.05);
+        }
+        .preset-info {
+            margin-top: 15px;
+            font-size: 16px;
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+        .preset-info.active {
+            background-color: #f8d7da;
+            border-color: #dc3545;
+        }
+        #videoPlayer {
+            width: 100%;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        #statusInfo, #playbackInfo {
+            font-size: 14px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            border-left: 4px solid #007bff;
+        }
+        #errorInfo {
+            display: none;
+        }
+        @keyframes serverChange {
+            0% { background-color: #e9ecef; }
+            50% { background-color: #cce5ff; }
+            100% { background-color: #e9ecef; }
+        }
+        #steeringInfo.changing {
+            animation: serverChange 1s ease-in-out;
+        }
+        #serverControls button {
+            width: 100%;
+            padding: 12px 20px;
+            margin-bottom: 10px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        #serverControls button.active {
+            background-color: #28a745;
+        }
+        #serverControls button.inactive {
+            background-color: #dc3545;
+        }
+
+        /* Estilo adicional para a seção de Steering */
+        #steeringMethodControl {
+            margin-top: 20px;
+            padding: 20px;
+            background: #e9ecef;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+
+        #steeringMethodControl button {
+            background-color: #007bff;
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            padding: 12px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+        #steeringMethodControl button:hover {
+            background-color: #0056b3;
+            transform: scale(1.05);
+        }
+
+        #steeringMethodDisplay {
+            font-size: 16px;
+            font-weight: bold;
+            color: #0056b3;
+            margin-top: 10px;
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #d1ecf1;
+            border-radius: 5px;
+            transition: background-color 0.5s ease-in-out;
+        }
+
+        .steeringMethodAI {
+            background-color: #c3e6cb;
+            color: #155724;
+        }
+
+        .steeringMethodDefault {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        /* Estilo para o botão de Encerramento */
+        #shutdownButton {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            background-color: #dc3545;
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+            z-index: 1000;
+        }
+
+        #shutdownButton:hover {
+            background-color: #c82333;
+            transform: scale(1.05);
+        }
+
+        /* Estilos para o grupo de entrada */
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .input-group input[type="text"] {
+            flex: 1;
+            padding: 10px;
+            font-size: 16px;
+            border: 2px solid #ced4da;
+            border-radius: 5px;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input[type="text"]:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+
+        .input-group button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.3s;
+        }
+
+        .input-group button:hover {
+            background-color: #0056b3;
+            transform: scale(1.05);
+        }
+        const style = document.createElement('style');
+        style.textContent = `
+            .metric-container {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 1rem;
+                background: white;
+                padding: 1rem;
+                border-radius: 0.5rem;
+                margin-bottom: 1rem;
+            }
+
+            .metric {
+                background: #f9fafb;
+                padding: 0.75rem;
+                border-radius: 0.5rem;
+                box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+            }
+
+            .metric-label {
+                display: block;
+                font-size: 0.875rem;
+                color: #4b5563;
+                font-weight: 500;
+                margin-bottom: 0.25rem;
+            }
+
+            .metric-value {
+                font-size: 1.125rem;
+                font-weight: 600;
+                color: #1f2937;
+            }
+
+            .throughput {
+                color: #2563eb;
+            }
+        `;
+        document.head.appendChild(style);
+
+    </style>
+</head>
+<body>
+    <!-- Botão de Encerramento -->
+    <button id="shutdownButton" onclick="shutdownApplication()">Encerrar Aplicação</button>
+
+    <div class="container">
+        <h1>Content Steering Dashboard</h1>
+
+        <div class="controls">
+            <h2>Carregar Vídeo Externo</h2>
+            <div class="input-group">
+                <input type="text" id="manifestUrl" placeholder="Insira a URL do manifesto MPD">
+                <button onclick="loadExternalVideo()">Carregar Manifesto</button>
+            </div>
+        </div>
+        
+
+        <div class="controls">
+            <h2>Condições de Rede</h2>
+
+            <div class="network-presets">
+                <button data-preset="poor" onclick="setNetworkPreset('poor')" class="{% if current_preset == 'poor' %}selected{% endif %}">Poor (2G)</button>
+                <button data-preset="average" onclick="setNetworkPreset('average')" class="{% if current_preset == 'average' %}selected{% endif %}">Average (3G)</button>
+                <button data-preset="good" onclick="setNetworkPreset('good')" class="{% if current_preset == 'good' %}selected{% endif %}">Good (4G)</button>
+                <button data-preset="5g" onclick="setNetworkPreset('5g')" class="{% if current_preset == '5g' %}selected{% endif %}">5G</button>
+                <button data-preset="6g" onclick="setNetworkPreset('6g')" class="{% if current_preset == '6g' %}selected{% endif %}">6G</button>
+                <button data-preset="excellent" onclick="setNetworkPreset('excellent')" class="{% if current_preset == 'excellent' %}selected{% endif %}">Excellent (Fiber)</button>
+            </div>
+
+            <div id="presetInfo" class="preset-info">
+                <!-- As informações do preset serão atualizadas via JavaScript -->
+            </div>
+        </div>
+
+        <div id="statusInfo">Rede atualizada: Carregando...</div>
+        <div id="playbackInfo">Inicializando o player...</div>
+
+        <video id="videoPlayer" controls></video>
+
+        <div id="steeringMethodControl">
+            <h3>Método de Steering</h3>
+            <button onclick="toggleSteeringMethod()">Alternar Método</button>
+            <p>Método atual: <span id="steeringMethodDisplay"></span></p>
+        </div>
+
+        <div id="steeringInfo">
+            <h3>Informações de Content Steering</h3>
+            <p>Servidor Atual: <span id="currentServer">Carregando...</span></p>
+        </div>
+
+        <div id="serverControls">
+            <h3>Controles do Servidor</h3>
+            <div id="serverToggles"></div>
+        </div>
+    </div>
+
+    <script>
+        let player;
+        let currentServer = 'Carregando...';
+        let userPaused = false;
+        let programmaticPause = false;
+        let programmaticPlay = false;
+        let currentPreset = {{ current_preset | tojson }};
+        let lastThroughput = 0;
+        let lastUsedPreset = 'good'; 
+        let currentMethod = 'Padrão';
+        let availableBitrates = null;
+        let bitratesInitialized = false;
+        let isInitializing = false;
+
+        function init() {          
+            player = dashjs.MediaPlayer().create();
+
+            player.on(dashjs.MediaPlayer.events.STREAM_INITIALIZED, function() {
+                console.log("Stream inicializado");
+                if (!bitratesInitialized) {
+                    availableBitrates = player.getBitrateInfoListFor("video");
+                    bitratesInitialized = true;
+                    console.log("Bitrates disponíveis:", availableBitrates);
+                    
+                    if (lastUsedPreset) {
+                        adjustQualityAndBuffer(lastUsedPreset);
+                    }
+                }
+            });
+        
+            setupPlayerListeners();
+            initializeInterface();
+        }
+
+        function setupPlayerListeners() {
+            player.on(dashjs.MediaPlayer.events.METRIC_CHANGED, function(e) {
+                if (e.metric === 'httpRequest' && e.value && e.value.trace && e.value.trace.length) {
+                    const trace = e.value.trace;
+                    const lastTrace = trace[trace.length - 1];
+                    
+                    if (lastTrace.b && lastTrace.d) {
+                        // b = bytes downloaded, d = duration in ms
+                        const throughput = (lastTrace.b * 8) / (lastTrace.d / 1000); // bits per second
+                        lastThroughput = throughput;
+                    }
+                }
+            });
+            player.on(dashjs.MediaPlayer.events.MANIFEST_LOADED, onManifestLoaded);
+            player.on(dashjs.MediaPlayer.events.FRAGMENT_LOADING_COMPLETED, onFragmentLoadingCompleted);
+            player.on(dashjs.MediaPlayer.events.QUALITY_CHANGE_RENDERED, onQualityChangeRendered);
+            player.on(dashjs.MediaPlayer.events.ERROR, onError);
+            player.on(dashjs.MediaPlayer.events.CONTENT_STEERING_REQUEST_COMPLETED, onContentSteeringRequestCompleted);
+            player.on(dashjs.MediaPlayer.events.BUFFER_LEVEL_STATE_CHANGED, onBufferLevelStateChanged);
+            player.on(dashjs.MediaPlayer.events.PLAYBACK_STARTED, onPlaybackStarted);
+            setInterval(updatePlaybackInfo, 1000); // Atualização periódica para garantir dados atualizados
+        }
+
+        function initializeInterface() {
+            const videoElement = document.getElementById('videoPlayer');
+            videoElement.addEventListener('pause', onVideoPause);
+            videoElement.addEventListener('play', onVideoPlay);
+        
+            // Atualizar a mensagem inicial
+            document.getElementById('playbackInfo').innerHTML = "Por favor, insira a URL do manifesto para iniciar o vídeo.";
+            
+            // Primeira atualização dos servidores
+            updateServerToggles();
+            
+            // Configurar intervalos de atualização somente após o primeiro carregamento
+            setTimeout(() => {
+                setInterval(updateServerToggles, 5000);
+            }, 5000);
+        
+            fetch('/get_steering_method')
+                .then(response => response.json())
+                .then(data => {
+                    updateSteeringMethodDisplay(data.use_ai_steering);
+                });
+            
+            const maxResolution = getMaxSupportedResolution();
+            console.log(`Resolução máxima suportada pelo dispositivo: ${maxResolution.width}x${maxResolution.height}`);
+        }
+
+        function isVideoLoaded() {
+            if (!player || !player.isReady()) {
+                alert('Por favor, insira a URL do manifesto para iniciar o vídeo primeiro.');
+                return false;
+            }
+            return true;
+        }
+
+        function limitResolution(width, height, maxWidth = 2560, maxHeight = 1440) {
+            const aspectRatio = width / height;
+            if (width > maxWidth) {
+                width = maxWidth;
+                height = Math.round(width / aspectRatio);
+            }
+            if (height > maxHeight) {
+                height = maxHeight;
+                width = Math.round(height * aspectRatio);
+            }
+            return [width, height];
+        }
+
+        function onStreamInitialized() {
+            console.log("Stream inicializado");
+            availableBitrates = player.getBitrateInfoListFor("video");
+            console.log("Bitrates disponíveis:", availableBitrates);
+            adjustQualityAndBuffer(currentPreset);
+        }
+
+        function onMetricChanged(e) {
+            if (e.metric === "bufferLevel") {
+                console.log("Nível do buffer atualizado:", e.value);
+            } else if (e.metric === "bandwidthEstimate") {
+                console.log("Estimativa de largura de banda atualizada:", e.value);
+            }
+        }
+
+        function onPlaybackStarted() {
+            console.log("Playback iniciado");
+        }
+
+
+        function onBufferLevelStateChanged(e) {
+            console.log("Estado do buffer alterado:", e.state);
+        }
+
+        function getAppropriateQuality(maxBitrate) {
+            if (!availableBitrates.length) {
+                console.warn("Lista de bitrates não disponível");
+                return null;
+            }
+        
+            let appropriateQuality = 0;
+            const maxResolution = { width: 2560, height: 1440 }; // Limite 2K
+        
+            for (let i = 0; i < availableBitrates.length; i++) {
+                const bitrate = availableBitrates[i];
+                if (bitrate.bitrate <= maxBitrate && 
+                    bitrate.width <= maxResolution.width && 
+                    bitrate.height <= maxResolution.height) {
+                    appropriateQuality = i;
+                } else {
+                    break;
+                }
+            }
+        
+            console.log("Qualidade selecionada:", appropriateQuality, 
+                        "Resolução:", availableBitrates[appropriateQuality].width + "x" + availableBitrates[appropriateQuality].height);
+            return appropriateQuality;
+        }
+
+        function estimateDownloadTime(bitrate, segmentDuration) {
+            const segmentSize = (bitrate * segmentDuration) / 8; // em bytes
+            const effectiveThroughput = Math.min(lastThroughput, bitrate); // considerando o pior caso
+            return segmentSize / (effectiveThroughput / 8); // tempo em segundos
+        }
+
+        function getMaxSupportedResolution() {
+            const videoElement = document.querySelector("#videoPlayer");
+            const maxWidth = screen.width * window.devicePixelRatio;
+            const maxHeight = screen.height * window.devicePixelRatio;
+            return { width: maxWidth, height: maxHeight };
+        }
+
+        function setInitialPreset() {
+            console.log("Preset inicial:", currentPreset);
+            const presets = {
+                'poor': { latency: 250, packetLoss: 2, bandwidth: 500 },
+                'average': { latency: 100, packetLoss: 1, bandwidth: 1000 },
+                'good': { latency: 35, packetLoss: 0.5, bandwidth: 25000 },
+                '5g': { latency: 10, packetLoss: 0.1, bandwidth: 100000 },
+                '6g': { latency: 4, packetLoss: 0.01, bandwidth: 1000000 },
+                'excellent': { latency: 1, packetLoss: 0.001, bandwidth: 1000000 }
+            };
+        
+            const selected = presets[currentPreset];
+            if (selected) {
+                updateNetwork(selected);
+                // Atualizar apenas a interface
+                document.querySelectorAll('.network-presets button').forEach(button => {
+                    button.classList.remove('selected');
+                });
+                const button = document.querySelector(`[data-preset="${currentPreset}"]`);
+                if (button) button.classList.add('selected');
+        
+                const presetInfo = `
+                    <strong>Preset Selecionado:</strong> ${currentPreset.toUpperCase()}<br>
+                    <strong>Latência:</strong> ${selected.latency} ms<br>
+                    <strong>Perda de Pacotes:</strong> ${selected.packetLoss} %<br>
+                    <strong>Largura de Banda:</strong> ${selected.bandwidth} kbit/s
+                `;
+                document.getElementById('presetInfo').innerHTML = presetInfo;
+                document.getElementById('presetInfo').classList.add('active');
+            }
+        }
+
+        function toggleSteeringMethod() {
+            if (!isVideoLoaded()) return;
+        
+            fetch('/toggle_steering_method', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    updateSteeringMethodDisplay(data.use_ai_steering);
+                });
+        }
+
+        function updateSteeringMethodDisplay(useAI) {
+            const display = document.getElementById('steeringMethodDisplay');
+            if (useAI) {
+                display.textContent = "IA";
+                display.classList.add('steeringMethodAI');
+                display.classList.remove('steeringMethodDefault');
+            } else {
+                display.textContent = "Padrão";
+                display.classList.add('steeringMethodDefault');
+                display.classList.remove('steeringMethodAI');
+            }
+        }
+
+        function onManifestLoaded(e) {
+            updatePlaybackInfo();
+            // Forçar uma atualização do servidor atual na interface
+            if (currentServer) {
+                document.getElementById('currentServer').textContent = currentServer;
+            }
+        }
+
+        function adjustQualityAndBuffer(preset) {
+            if (!player || !player.isReady()) {
+                console.log("Player não está pronto para ajuste de qualidade");
+                return;
+            }
+        
+            // Verificar se os bitrates estão disponíveis
+            if (!bitratesInitialized) {
+                console.log("Aguardando inicialização dos bitrates...");
+                setTimeout(() => adjustQualityAndBuffer(preset), 500);
+                return;
+            }
+        
+            // Evitar ajustes múltiplos durante a inicialização
+            if (isInitializing) {
+                console.log("Ajuste já em andamento, ignorando chamada");
+                return;
+            }
+        
+            isInitializing = true;
+            console.log("Ajustando qualidade e buffer para o preset:", preset);
+            
+            const presets = {
+                'poor': { maxBitrate: 300000, bufferTime: 12 },
+                'average': { maxBitrate: 1000000, bufferTime: 10 },
+                'good': { maxBitrate: 5000000, bufferTime: 8 },
+                '5g': { maxBitrate: 25000000, bufferTime: 6 },
+                '6g': { maxBitrate: 50000000, bufferTime: 4 },
+                'excellent': { maxBitrate: 100000000, bufferTime: 4 }
+            };
+        
+            const settings = presets[preset];
+            if (!settings) {
+                console.error(`Preset inválido para ajuste de qualidade: ${preset}`);
+                isInitializing = false;
+                return;
+            }
+        
+            console.log("Configurações atualizadas:", settings);
+        
+            player.updateSettings({
+                'streaming': {
+                    'abr': {
+                        'maxBitrate': { 'video': settings.maxBitrate }
+                    },
+                    'buffer': {
+                        'stallThreshold': settings.bufferTime / 2,
+                        'bufferTimeAtTopQuality': settings.bufferTime,
+                        'bufferTimeAtTopQualityLongForm': settings.bufferTime
+                    }
+                }
+            });
+        
+            // Ajustar qualidade baseado no preset
+            if (preset === 'poor') {
+                const lowestQuality = findLowestQuality();
+                if (lowestQuality !== null) {
+                    setPlayerQuality(lowestQuality);
+                }
+            } else {
+                const appropriateQuality = findAppropriateQuality(settings.maxBitrate);
+                if (appropriateQuality !== null) {
+                    setPlayerQuality(appropriateQuality);
+                }
+            }
+        
+            // Resetar flag após ajustes
+            setTimeout(() => {
+                isInitializing = false;
+                console.log("Inicialização concluída");
+            }, 1000);
+        }
+
+        function findLowestQuality() {
+            if (!bitratesInitialized) return null;
+        
+            let lowestQuality = 0;
+            let lowestBitrate = availableBitrates[0].bitrate;
+            let lowestResolution = availableBitrates[0].width * availableBitrates[0].height;
+        
+            for (let i = 1; i < availableBitrates.length; i++) {
+                const currentBitrate = availableBitrates[i].bitrate;
+                const currentResolution = availableBitrates[i].width * availableBitrates[i].height;
+                
+                if (currentBitrate < lowestBitrate || 
+                    (currentBitrate === lowestBitrate && currentResolution < lowestResolution)) {
+                    lowestQuality = i;
+                    lowestBitrate = currentBitrate;
+                    lowestResolution = currentResolution;
+                }
+            }
+        
+            return lowestQuality;
+        }
+
+        function findAppropriateQuality(maxBitrate) {
+            if (!bitratesInitialized) return null;
+        
+            let appropriateQuality = 0;
+            const MAX_WIDTH = 2560;  // Limite máximo 2K
+            const MAX_HEIGHT = 1440;
+        
+            // Encontra a maior qualidade que não excede o maxBitrate e o limite 2K
+            for (let i = 0; i < availableBitrates.length; i++) {
+                const bitrate = availableBitrates[i];
+                if (bitrate.bitrate <= maxBitrate && 
+                    bitrate.width <= MAX_WIDTH && 
+                    bitrate.height <= MAX_HEIGHT) {
+                    appropriateQuality = i;
+                } else {
+                    break;
+                }
+            }
+        
+            console.log("Qualidade selecionada:", appropriateQuality, 
+                        "Resolução:", availableBitrates[appropriateQuality].width + "x" + 
+                        availableBitrates[appropriateQuality].height,
+                        "Bitrate:", availableBitrates[appropriateQuality].bitrate);
+        
+            return appropriateQuality;
+        }
+
+        function setPlayerQuality(qualityIndex) {
+            if (!bitratesInitialized) return;
+        
+            const bitrate = availableBitrates[qualityIndex];
+            console.log("Configurando qualidade para:", {
+                index: qualityIndex,
+                bitrate: bitrate.bitrate,
+                resolution: `${bitrate.width}x${bitrate.height}`
+            });
+        
+            player.setQualityFor("video", qualityIndex);
+            player.updateSettings({
+                'streaming': {
+                    'abr': {
+                        'autoSwitchBitrate': { 'video': false }
+                    }
+                }
+            });
+        }
+
+        function updateNetwork(settings) {
+            if (!settings.preset) {
+                settings.preset = lastUsedPreset; // Usar o último preset conhecido
+            }
+            
+            fetch('/update_network', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(settings),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'sucesso') {
+                    document.getElementById('statusInfo').innerHTML = `Rede atualizada: Latência=${data.updated_values.latency}ms, Perda de Pacotes=${data.updated_values.packet_loss}%, Largura de Banda=${data.updated_values.bandwidth}kbit/s`;
+                    
+                    
+                    if (data.preset) {
+                        lastUsedPreset = data.preset;
+                    }
+                } else {
+                    console.error('Erro ao atualizar a rede:', data.mensagem);
+                }
+            })
+            .catch(error => {
+                console.error('Erro ao atualizar a rede:', error);
+            });
+        }
+
+        function getMaxBitrateForBandwidth(bandwidth) {
+            if (bandwidth >= 1000000) return NaN; 
+            if (bandwidth >= 200000) return 5000;
+            if (bandwidth >= 50000) return 2000;
+            if (bandwidth >= 10000) return 1000;
+            return 500;
+        }
+
+        function onFragmentLoadingCompleted(e) {
+            if (e.request.mediaType === 'video' || e.request.mediaType === 'audio') {
+                updatePlaybackInfo();
+            }
+        }
+
+        function onQualityChangeRendered(e) {
+            updatePlaybackInfo();
+        }
+
+        function onError(e) {
+            console.error("Erro de Reprodução:", e);
+        }
+
+        function onContentSteeringRequestCompleted(e) {
+            if (e && e.currentSteeringResponseData) {
+                const data = e.currentSteeringResponseData;
+                if (data['PATHWAY-PRIORITY'] && data['PATHWAY-PRIORITY'].length > 0) {
+                    currentServer = data['PATHWAY-PRIORITY'][0];
+                    onServerChange(currentServer);
+                }
+            } else {
+                console.warn("Formato inesperado da resposta de content steering:", e);
+            }
+        }
+
+        function onServerChange(newServer) {
+            const serverElement = document.getElementById('currentServer');
+            serverElement.textContent = newServer;
+            document.getElementById('steeringInfo').classList.add('changing');
+            setTimeout(() => {
+                document.getElementById('steeringInfo').classList.remove('changing');
+            }, 1000);
+        }
+
+        function updateSteeringInfo() {
+            if (!player || !player.isReady()) {
+                document.getElementById('currentServer').textContent = "Aguardando inicialização do vídeo...";
+                return;
+            }
+        
+            fetch('/current_server')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.current_server) {
+                        if (data.current_server !== currentServer) {
+                            console.log(`Servidor alterado de ${currentServer} para ${data.current_server}`);
+                            currentServer = data.current_server;
+                            onServerChange(currentServer);
+                        } else {
+                            console.log(`Servidor mantido: ${currentServer}`);
+                        }
+                    } else {
+                        console.warn("Nenhum servidor atual recebido do backend");
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao obter o servidor atual:', error);
+                });
+        }
+
+        function forceServerSelection() {
+            fetch('/force_server_selection', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        console.log(`Forçada nova seleção de servidor. Selecionado: ${data.selected_server}`);
+                        updateSteeringInfo();
+                    } else {
+                        console.error('Erro ao forçar seleção de servidor:', data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao forçar seleção de servidor:', error);
+                });
+        }
+        
+        
+        setInterval(forceServerSelection, 30000); // Force uma nova seleção a cada 30 segundos
+
+        function updatePlaybackInfo() {
+            if (!player || !player.isReady()) {
+                document.getElementById('playbackInfo').innerHTML = "Por favor, insira a URL do manifesto para iniciar o vídeo.";
+                return;
+            }
+        
+            try {
+                const currentQuality = player.getQualityFor("video");
+                const bitrateInfo = player.getBitrateInfoListFor("video");
+                const currentBitrateInfo = bitrateInfo[currentQuality];
+                const currentThroughput = player.getAverageThroughput("video") || 0;
+                const bufferLength = player.getBufferLength("video") || 0;
+        
+                let currentBitrate = 0;
+                let resolution = 'N/A';
+        
+                if (currentBitrateInfo) {
+                    currentBitrate = currentBitrateInfo.bitrate;
+                    resolution = `${currentBitrateInfo.width}x${currentBitrateInfo.height}`;
+                }
+        
+                // Converter kbit/s para Mbit/s
+                const displayBitrate = (currentBitrate / 1000).toFixed(2);
+                const displayThroughput = (currentThroughput / 1000).toFixed(2);
+        
+                let playbackInfo = `
+                    <div class="metric-container">
+                        <div class="metric">
+                            <span class="metric-label">Tamanho do Buffer:</span>
+                            <span class="metric-value">${bufferLength.toFixed(2)} segundos</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Qualidade Atual:</span>
+                            <span class="metric-value">${currentQuality}/${bitrateInfo.length - 1}</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Resolução Atual:</span>
+                            <span class="metric-value">${resolution}</span>
+                        </div>
+                    </div>
+                `;
+        
+                document.getElementById('playbackInfo').innerHTML = playbackInfo;
+            } catch (error) {
+                console.log("Erro ao atualizar informações de playback:", error);
+                document.getElementById('playbackInfo').innerHTML = "Erro ao atualizar informações de reprodução.";
+            }
+        }
+
+        function getMaxSupportedResolution() {
+            const width = window.screen.width * window.devicePixelRatio;
+            const height = window.screen.height * window.devicePixelRatio;
+            return { width, height };
+        }
+
+        function logPlayerState() {
+            if (!player || !player.isReady()) return;
+        
+            try {
+                const currentQuality = player.getQualityFor("video");
+                const bitrateInfo = player.getBitrateInfoListFor("video");
+                const currentBitrate = bitrateInfo[currentQuality] ? bitrateInfo[currentQuality].bitrate : 0;
+        
+                console.log("Estado atual do player:");
+                console.log("Qualidade atual:", currentQuality);
+                console.log("Bitrate atual:", currentBitrate);
+                console.log("Buffer atual:", player.getBufferLength("video"));
+                console.log("Throughput médio:", player.getAverageThroughput("video"));
+                console.log("ABR enabled:", player.getSettings().streaming.abr.autoSwitchBitrate.video);
+            } catch (error) {
+                console.log("Player ainda não está pronto para logging de estado");
+            }
+        }
+
+        async function setSteeringMethod(method) {
+            await fetch('/set_steering_method', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ use_ai_steering: method === 'IA' })
+            }).then(response => response.json())
+              .then(data => {
+                  updateSteeringMethodDisplay(data.use_ai_steering);
+              }).catch(error => {
+                  console.error('Erro ao definir método de steering:', error);
+              });
+        }
+
+        function setNetworkPreset(preset) {
+            if (!isVideoLoaded()) return;
+            lastUsedPreset = preset; // Salva o preset atual
+            console.log("Alterando preset de rede para:", preset);
+            const presets = {
+                'poor': { latency: 250, packetLoss: 2, bandwidth: 500, maxResolution: [640, 360], preset: 'poor' },
+                'average': { latency: 100, packetLoss: 1, bandwidth: 1000, maxResolution: [854, 480], preset: 'average' },
+                'good': { latency: 35, packetLoss: 0.5, bandwidth: 25000, maxResolution: [1920, 1080], preset: 'good' },
+                '5g': { latency: 10, packetLoss: 0.1, bandwidth: 100000, maxResolution: [2560, 1440], preset: '5g' },
+                '6g': { latency: 4, packetLoss: 0.01, bandwidth: 1000000, maxResolution: [2560, 1440], preset: '6g' },
+                'excellent': { latency: 1, packetLoss: 0.001, bandwidth: 1000000, maxResolution: [2560, 1440], preset: 'excellent'}
+            };
+        
+            const selected = presets[preset];
+            if (!selected) {
+                console.error(`Preset inválido: ${preset}`);
+                return;
+            }
+        
+            updateNetwork(selected);
+            
+            // Ajustar a qualidade do vídeo apenas se o player estiver inicializado
+            if (player && player.isReady()) {
+                adjustQualityAndBuffer(preset, selected.maxResolution);
+            }
+        
+            
+            document.querySelectorAll('.network-presets button').forEach(button => {
+                button.classList.remove('selected');
+            });
+            document.querySelector(`[data-preset="${preset}"]`).classList.add('selected');
+        
+            const presetInfo = `
+                <strong>Preset Selecionado:</strong> ${preset.toUpperCase()}<br>
+                <strong>Latência:</strong> ${selected.latency} ms<br>
+                <strong>Perda de Pacotes:</strong> ${selected.packetLoss} %<br>
+                <strong>Largura de Banda:</strong> ${selected.bandwidth} kbit/s
+            `;
+            document.getElementById('presetInfo').innerHTML = presetInfo;
+            document.getElementById('presetInfo').classList.add('active');
+
+            lastUsedPreset = preset;
+        }
+
+        function updateServerToggles() {
+            fetch('/server_status')
+                .then(response => response.json())
+                .then(data => {
+                    const serverToggles = document.getElementById('serverToggles');
+                    serverToggles.innerHTML = '';
+                    let allServersInactive = true;
+                    for (const [server, active] of Object.entries(data)) {
+                        const button = document.createElement('button');
+                        button.textContent = `${server}: ${active ? 'Ativo' : 'Inativo'}`;
+                        button.onclick = () => toggleServer(server);
+                        button.className = active ? 'active' : 'inactive';
+                        button.setAttribute('data-server', server); 
+                        serverToggles.appendChild(button);
+        
+                        if (active) {
+                            allServersInactive = false;
+                        }
+                    }
+        
+                    const videoElement = document.getElementById('videoPlayer');
+        
+                    // Só tentar controlar o player se ele estiver inicializado
+                    if (player && player.isReady()) {
+                        if (allServersInactive && !videoElement.paused && !userPaused) {
+                            programmaticPause = true;
+                            player.pause();
+                            console.log("Todos os servidores estão inativos. Reprodução pausada.");
+                        } else if (!allServersInactive && videoElement.paused && !userPaused) {
+                            programmaticPlay = true;
+                            player.play();
+                            // Usar último preset conhecido ao retomar a reprodução
+                            setTimeout(() => {
+                                adjustQualityAndBuffer(lastUsedPreset);
+                            }, 1000);
+                            console.log("Servidor ativado. Reprodução retomada.");
+                        }
+                    }
+                });
+        }
+
+        function toggleServer(server) {
+            if (!isVideoLoaded()) return;
+            console.log(`Solicitando alternância do servidor: ${server}`);
+            fetch('/toggle_server', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ server: server }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'sucesso') {
+                    console.log(`Operação iniciada para ${server}. Novo estado: ${data.active ? 'ativo' : 'inativo'}`);
+                    // Atualizar a UI para mostrar que a operação está em andamento
+                    updateServerButtonStatus(server, 'pending');
+                    // Agendar uma verificação do status do servidor após um curto delay
+                    setTimeout(() => checkServerStatus(server), 5000);
+                } else {
+                    console.error('Erro ao alternar o servidor:', data.mensagem);
+                }
+            })
+            .catch(error => {
+                console.error('Erro na requisição:', error);
+            });
+        }
+
+        function checkServerStatus(server) {
+            fetch('/server_status')
+                .then(response => response.json())
+                .then(data => {
+                    const status = data[server] ? 'active' : 'inactive';
+                    updateServerButtonStatus(server, status);
+                })
+                .catch(error => {
+                    console.error('Erro ao verificar status do servidor:', error);
+                    updateServerButtonStatus(server, 'error');
+                });
+        }
+
+        function updateServerButtonStatus(server, status) {
+            const button = document.querySelector(`button[data-server="${server}"]`);
+            if (button) {
+                button.classList.remove('active', 'inactive', 'pending');
+                button.classList.add(status);
+                button.textContent = `${server}: ${status === 'pending' ? 'Atualizando...' : (status === 'active' ? 'Ativo' : 'Inativo')}`;
+            }
+        }
+
+        function shutdownApplication() {
+            if (confirm("Tem certeza de que deseja encerrar a aplicação?")) {
+                fetch('/shutdown', {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'sucesso') {
+                        alert("Aplicação encerrada com sucesso.");
+                        
+                    } else {
+                        alert("Erro ao encerrar a aplicação: " + data.mensagem);
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao encerrar a aplicação:', error);
+                    alert("Erro ao encerrar a aplicação.");
+                });
+            }
+        }
+
+        function onVideoPause() {
+            if (programmaticPause) {
+                console.log("Reprodução pausada programaticamente.");
+                programmaticPause = false;
+            } else {
+                userPaused = true;
+                console.log("Reprodução pausada pelo usuário.");
+            }
+        }
+
+        function onVideoPlay() {
+            if (programmaticPlay) {
+                console.log("Reprodução retomada programaticamente.");
+                programmaticPlay = false;
+            } else {
+                userPaused = false;
+                console.log("Reprodução retomada pelo usuário.");
+            }
+        
+            // Usar o último preset conhecido ao invés do preset padrão
+            if (lastUsedPreset) {
+                adjustQualityAndBuffer(lastUsedPreset);
+            }
+        }
+
+        window.addEventListener('load', () => {
+            init();
+            setInitialPreset();
+        });
+
+        function loadExternalVideo() {
+            const manifestUrl = document.getElementById('manifestUrl').value;
+            if (!manifestUrl) {
+                alert('Por favor, insira uma URL do manifesto');
+                return;
+            }
+        
+            bitratesInitialized = false;
+            availableBitrates = null;
+        
+            const inputField = document.getElementById('manifestUrl');
+            const loadButton = inputField.nextElementSibling;
+            inputField.disabled = true;
+            loadButton.disabled = true;
+        
+            fetch('/load_external_manifest', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ url: manifestUrl }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.selected_server) {
+                        currentServer = data.selected_server;
+                        document.getElementById('currentServer').textContent = data.selected_server;
+                        document.getElementById('steeringInfo').classList.add('changing');
+                        setTimeout(() => {
+                            document.getElementById('steeringInfo').classList.remove('changing');
+                        }, 1000);
+                    }
+        
+                    // Atualizar o preset atual com os dados do servidor
+                    if (data.current_preset) {
+                        lastUsedPreset = data.current_preset;
+                        currentPreset = data.current_preset;
+                        // Atualizar a interface do preset
+                        document.querySelectorAll('.network-presets button').forEach(button => {
+                            button.classList.remove('selected');
+                            if (button.getAttribute('data-preset') === data.current_preset) {
+                                button.classList.add('selected');
+                            }
+                        });
+                        
+                        // Atualizar a informação do preset
+                        if (data.preset_data) {
+                            const presetInfo = `
+                                <strong>Preset Selecionado:</strong> ${data.preset_data.name}<br>
+                                <strong>Latência:</strong> ${data.preset_data.latency} ms<br>
+                                <strong>Perda de Pacotes:</strong> ${data.preset_data.packet_loss} %<br>
+                                <strong>Largura de Banda:</strong> ${data.preset_data.bandwidth} kbit/s
+                            `;
+                            document.getElementById('presetInfo').innerHTML = presetInfo;
+                            document.getElementById('presetInfo').classList.add('active');
+                        }
+                    }
+        
+                    player.initialize(document.querySelector("#videoPlayer"), data.local_manifest_url, true);
+                    
+                    setTimeout(() => {
+                        adjustQualityAndBuffer(lastUsedPreset);
+                    }, 1000);
+        
+                    updateServerToggles();
+                } else {
+                    alert('Erro ao carregar o vídeo externo: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                alert('Erro ao carregar o vídeo externo');
+            })
+            .finally(() => {
+                inputField.disabled = false;
+                loadButton.disabled = false;
+            });
+        }
+
+    </script>
+</body>
+</html>
+
