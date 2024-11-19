@@ -14,7 +14,7 @@ Observação 2: Sempre que solicitar senha (especialmente com comandos sudo no t
 4) A interface web será iniciada no seguinte endereço: http://localhost:30500.
 5) O link: https://ftp.itec.aau.at/datasets/mmsys22/Eldorado/4sec/ contém os arquivos manifestos com os diferentes codecs. Por exemplo, o codec av1 possui link: https://ftp.itec.aau.at/datasets/mmsys22/Eldorado/4sec/av1/manifest.mpd, enquanto que o codec avc possui link: https://ftp.itec.aau.at/datasets/mmsys22/Eldorado/4sec/avc/manifest.mpd. Teste eles na aplicação inserindo esses links na url do campo na interface web.
 6) Para encerrar a aplicação, clique no botão chamado Encerrar Aplicação no canto superior direito.
-7) Os gráficos gerados após a execução da aplicação estão na pasta graphs.
+7) Os gráficos gerados após a execução da aplicação estão na pasta graphs.  
 Observação: Há codecs que o navegador ou o player dash ainda não tem suporte (hevc ou vvc), então o player vai reproduzir somente o áudio, porém sem a imagem.
 
 
