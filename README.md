@@ -4,7 +4,7 @@ Este projeto apresenta um sistema adaptativo de content steering desenvolvido pa
 
 ## Tutorial de Configuração do Projeto.
 O arquivo de extensão .ova está disponível no Drive no link: https://drive.google.com/file/d/15MfoyMp_JRJUxL6LIcwKE7o_nVePt80T/view?usp=sharing.  
-O projeto foi desenvolvido inteiramente utilizando o sistema operacional linux e rodando uma VM sobre o linux. O software de virtualização (VirtualBox) utilizado encontra-se disponível no link: https://www.virtualbox.org/. 
+O projeto foi desenvolvido inteiramente utilizando o sistema operacional linux e rodando uma VM sobre o linux. O software de virtualização (VirtualBox) utilizado encontra-se disponível no link: https://www.virtualbox.org/.  
 Observação 1: Foi testado o sistema operacional Windows e também funcionou corretamente, porém lembre-se de modificar a quantidade de núcleos e memória ram conforme disponível em sua máquina para o bom funcionamento da máquina virtual.
 Após instalado corretamente o VirtualBox, vá no menu Arquivo -> Importar Appliance -> Selecione o arquivo .ova no diretório onde foi baixado e espere a importação finalizar.
 Observação 2: Sempre que solicitar senha (especialmente com comandos sudo no terminal) digite tutorial
