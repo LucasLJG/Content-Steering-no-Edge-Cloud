@@ -11,7 +11,7 @@ Observação 2: Sempre que solicitar senha (especialmente com comandos sudo no t
 1) Inicie a VM
 2) Vá para o diretório: /home/tutorial/Documents/content-steering-tutorial/streaming-service e execute o script de nome update_servers.sh no terminal através do comando: sudo ./update_servers.sh. Esse script inicializará os servidores de cache responsáveis pela distribuição de conteúdo.
 3) Em seguida, inicie a aplicação no diretório /home/tutorial/Documents/content-steering-tutorial/steering-service/src executando o script de nome run and capture.sh no terminal utilizando o comando sudo ./run_and_capture.sh. Este script realiza diversas tarefas cruciais para o funcionamento do sistema: limpa logs anteriores, verifica e libera a porta 30500 se necessário, inicia a captura de tráfego para análise posterior e inicializa a aplicação Python principal.
-4) 
+4) A interface web será iniciada no seguinte endereço: http://localhost:30500.
 5) O link: https://ftp.itec.aau.at/datasets/mmsys22/Eldorado/4sec/ contém os arquivos manifestos com os diferentes codecs. Por exemplo, o codec av1 possui link: https://ftp.itec.aau.at/datasets/mmsys22/Eldorado/4sec/av1/manifest.mpd, enquanto que o codec avc possui link: https://ftp.itec.aau.at/datasets/mmsys22/Eldorado/4sec/avc/manifest.mpd. Teste eles na aplicação inserindo esses links na url do campo na interface web.
 6) Para encerrar a aplicação, clique no botão chamado Encerrar Aplicação no canto superior direito.
 7) Os gráficos gerados após a execução da aplicação estão na pasta graphs.
