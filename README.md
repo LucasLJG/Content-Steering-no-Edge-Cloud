@@ -7,7 +7,7 @@ O arquivo de extensão .ova está disponível no Drive no link: https://drive.go
 O projeto foi desenvolvido inteiramente utilizando o sistema operacional linux e rodando uma VM sobre o linux. O software de virtualização (VirtualBox) utilizado encontra-se disponível no link: https://www.virtualbox.org/.  
 Observação 1: Foi testado o sistema operacional Windows e também funcionou corretamente, porém lembre-se de modificar a quantidade de núcleos e memória ram conforme disponível em sua máquina para o bom funcionamento da máquina virtual.
 Após instalado corretamente o VirtualBox, vá no menu Arquivo -> Importar Appliance -> Selecione o arquivo .ova no diretório onde foi baixado e espere a importação finalizar.
-Observação 2: Sempre que solicitar senha (especialmente com comandos sudo no terminal) digite tutorial
+Observação 2: Sempre que solicitar senha (especialmente com comandos sudo no terminal) digite tutorial  
 1) Inicie a VM
 2) Vá para o diretório: /home/tutorial/Documents/content-steering-tutorial/streaming-service e execute o script de nome update_servers.sh no terminal através do comando: sudo ./update_servers.sh. Esse script inicializará os servidores de cache responsáveis pela distribuição de conteúdo.
 3) Em seguida, inicie a aplicação no diretório /home/tutorial/Documents/content-steering-tutorial/steering-service/src executando o script de nome run and capture.sh no terminal utilizando o comando sudo ./run_and_capture.sh. Este script realiza diversas tarefas cruciais para o funcionamento do sistema: limpa logs anteriores, verifica e libera a porta 30500 se necessário, inicia a captura de tráfego para análise posterior e inicializa a aplicação Python principal.
