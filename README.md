@@ -13,8 +13,7 @@ Este tutorial descreve como configurar e executar o projeto adaptativo de **cont
   [Download da Máquina Virtual](https://drive.google.com/file/d/15MfoyMp_JRJUxL6LIcwKE7o_nVePt80T/view?usp=sharing).  
 - O software de virtualização **VirtualBox** pode ser baixado aqui:  
   [Download do VirtualBox](https://www.virtualbox.org/).
-
-**Observação 1**: O sistema foi desenvolvido para Linux, mas também foi testado no **Windows**, onde funcionou corretamente.  
+ 
 **Dica**: Para um melhor desempenho, ajuste os recursos da máquina virtual (número de núcleos de CPU e memória RAM) de acordo com as especificações do seu hardware.
 
 ---
@@ -25,7 +24,7 @@ Este tutorial descreve como configurar e executar o projeto adaptativo de **cont
    **Arquivo → Importar Appliance**.  
 3. Selecione o arquivo `.ova` que você baixou e conclua o processo de importação.
 
-**Observação 2**: Sempre que for solicitado uma senha no terminal (ao usar comandos `sudo`), utilize a senha padrão: `tutorial`.
+**Observação 1**: Sempre que for solicitado uma senha no terminal (ao usar comandos `sudo`), utilize a senha padrão: `tutorial`.
 
 ---
 
